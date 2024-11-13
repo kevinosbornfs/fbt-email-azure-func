@@ -25,11 +25,15 @@ function getGraphClient(accessToken: string) {
   });
 }
 
-const sendDailyEmail = async function (context: any): Promise<void> {  
-  const today = new Date();
-  const dayOfWeek = today.getUTCDay(); 
+function isBusinessDay(day: Date): boolean {
+    const dayOfWeek = day.getUTCDay();
+    return dayOfWeek >= 1 && dayOfWeek <= 5; 
+  }
 
-  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+const sendDailyEmail = async function (context: any): Promise<void> {  
+    const today = new Date();
+
+  if (isBusinessDay(today)) {
     const to = "recipient@example.com";
     const subject = "Daily Reminder";
     const body = "This is your daily reminder email sent using Microsoft Graph API.";
