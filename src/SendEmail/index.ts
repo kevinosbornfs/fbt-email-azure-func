@@ -14,6 +14,11 @@ async function getAccessToken() {
   const result = await cca.acquireTokenByClientCredential({
     scopes: config.scope,
   });
+
+  if (!result) {
+    throw new Error('Access token missing')
+  }
+
   return result.accessToken;
 }
 
@@ -60,7 +65,7 @@ const sendDailyEmail = async function (context: any): Promise<void> {
       await graphClient.api("/me/sendMail").post({ message });
 
       context.log(`Email sent successfully to ${to}`);
-    } catch (error) {
+    } catch (error: any) {
       context.log(`Error sending email: ${error.message}`);
     }
   } else {
