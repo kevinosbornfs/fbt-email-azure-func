@@ -3,70 +3,65 @@ import { Client } from "@microsoft/microsoft-graph-client";
 import { config } from "../config";
 
 const cca = new msal.ConfidentialClientApplication({
-    auth: {
-        clientId: config.clientId,
-        authority: `${config.authority}/${config.tenantId}`,
-        clientSecret: config.clientSecret
-    }
+  auth: {
+    clientId: config.clientId,
+    authority: `${config.authority}/${config.tenantId}`,
+    clientSecret: config.clientSecret
+  }
 });
 
 async function getAccessToken() {
-    const result = await cca.acquireTokenByClientCredential({
-        scopes: config.scope,
-    });
-    return result.accessToken;
+  const result = await cca.acquireTokenByClientCredential({
+    scopes: config.scope,
+  });
+  return result.accessToken;
 }
 
 function getGraphClient(accessToken: string) {
-    return Client.init({
-        authProvider: (done) => {
-            done(null, accessToken);
-        }
-    });
+  return Client.init({
+    authProvider: (done) => {
+      done(null, accessToken);
+    }
+  });
 }
 
-const sendEmail = async function (context: any, req: any): Promise<void> {  // Explicit signature isn't needed for now
-    const { to, subject, body } = req.body;
+const sendDailyEmail = async function (context: any): Promise<void> {  
+  const today = new Date();
+  const dayOfWeek = today.getUTCDay(); 
 
-    if (!to || !subject || !body) {
-        context.res = {
-            status: 400,
-            body: "Please provide 'to', 'subject', and 'body' in the request body."
-        };
-        return;
-    }
+  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+    const to = "recipient@example.com";
+    const subject = "Daily Reminder";
+    const body = "This is your daily reminder email sent using Microsoft Graph API.";
 
     try {
-        const accessToken = await getAccessToken();
-        const graphClient = getGraphClient(accessToken);
+      const accessToken = await getAccessToken();
+      const graphClient = getGraphClient(accessToken);
 
-        const message = {
-            subject: subject,
-            body: {
-                contentType: "Text",
-                content: body
-            },
-            toRecipients: [
-                {
-                    emailAddress: {
-                        address: to
-                    }
-                }
-            ]
-        };
+      const message = {
+        subject: subject,
+        body: {
+          contentType: "Text",
+          content: body
+        },
+        toRecipients: [
+          {
+            emailAddress: {
+              address: to
+            }
+          }
+        ]
+      };
 
-        await graphClient.api("/me/sendMail").post({ message });
+      await graphClient.api("/me/sendMail").post({ message });
 
-        context.res = {
-            status: 200,
-            body: `Email sent successfully to ${to}!`
-        };
+      context.log(`Email sent successfully to ${to}`);
     } catch (error) {
-        context.res = {
-            status: 500,
-            body: `Error sending email: ${error.message}`
-        };
+      context.log(`Error sending email: ${error.message}`);
     }
+  } else {
+    context.log("Today is a weekend. No email sent.");
+  }
 };
 
-export default sendEmail;
+export default sendDailyEmail;
