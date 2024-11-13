@@ -1,0 +1,1 @@
+# Azure Function - Send email via Microsoft Graph
